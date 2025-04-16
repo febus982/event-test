@@ -1,6 +1,6 @@
 import pytest
 
-from common import AppConfig
+from src.common import AppConfig
 
 
 @pytest.fixture(autouse=True)
@@ -14,4 +14,4 @@ def anyio_backend():
 
 @pytest.fixture(scope="session")
 def test_config() -> AppConfig:
-    return AppConfig(SQLALCHEMY_CONFIG={}, ENVIRONMENT="test", CORS_ORIGINS=["*"])
+    return AppConfig(ENVIRONMENT="test", CORS_ORIGINS=["*"])

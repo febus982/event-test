@@ -2,7 +2,7 @@ import asyncio
 
 import pytest
 
-from common.utils import apply_decorator_to_methods
+from src.common.utils import apply_decorator_to_methods
 
 
 @pytest.mark.parametrize(

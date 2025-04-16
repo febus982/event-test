@@ -1,4 +1,4 @@
-from opentelemetry import trace
+from opentelemetry import trace  # type: ignore
 from structlog.typing import EventDict
 
 

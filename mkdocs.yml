@@ -1,11 +1,11 @@
 # yaml-language-server: $schema=https://squidfunk.github.io/mkdocs-material/schema.json
 
-site_name: Bootstrap python fastapi
-site_description: 'A template for a python web service written applying Clean Architecture concepts'
+site_name: Event test
+site_description: 'A test application that ingests events'
 site_author: 'Federico Busetti'
 docs_dir: docs/
-repo_name: 'febus982/bootstrap-python-fastapi'
-repo_url: 'https://github.com/febus982/bootstrap-python-fastapi'
+repo_name: 'febus982/event-test'
+repo_url: 'https://github.com/febus982/https://github.com/febus982/event-test'
 
 plugins:
   - search

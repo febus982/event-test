@@ -3,30 +3,17 @@ authors = [
     {name = "Federico Busetti", email = "729029+febus982@users.noreply.github.com"},
 ]
 requires-python = "<3.14,>=3.10"
-name = "bootstrap-fastapi-service"
+name = "event-test"
 version = "0.1.0"
 description = ""
 readme = "README.md"
 dependencies = [
-    "aiosqlite>=0.18.0",
-    "asgiref<4.0.0,>=3.7.2",
-    "asyncmy>=0.2.10",
-    "cloudevents-pydantic<1.0.0,>=0.0.3",
     "dependency-injector[pydantic]<5.0.0,>=4.41.0",
-    "dramatiq[redis,watch]<2.0.0,>=1.17.1",
-    "hiredis<4.0.0,>=3.1.0", # Recommended by dramatiq
     "httpx>=0.23.0",
-    "opentelemetry-instrumentation-httpx",
-    "opentelemetry-instrumentation-sqlalchemy",
-    "opentelemetry-instrumentor-dramatiq",
     "opentelemetry-exporter-otlp",
     "opentelemetry-sdk",
-    "orjson<4.0.0,>=3.10.12",
     "pydantic<3.0.0,>=2.2.1",
-    "pydantic-asyncapi>=0.2.1",
     "pydantic-settings<3.0.0,>=2.0.3",
-    "SQLAlchemy[asyncio,mypy]<3.0.0,>=2.0.0",
-    "sqlalchemy-bind-manager",
     "structlog<25.1.1,>=25.1.0",
 ]
 
@@ -44,15 +31,6 @@ http = [
     "pyjwt>=2.10.1",
     "strawberry-graphql[debug-server]>=0.204.0",
     "uvicorn[standard]<1.0.0,>=0.34.0",
-]
-socketio = [
-    "python-socketio>=5.12.1",
-    "starlette>=0.45.3,<0.46",
-    "uvicorn[standard]<1.0.0,>=0.34.0",
-]
-migrations = [
-    "alembic<2.0.0,>=1.11.1",
-    "factory-boy<4.0.0,>=3.3.3",
 ]
 dev = [
     "asynctest",
@@ -106,22 +84,16 @@ exclude_also = [
     ]
 
 [tool.mypy]
-files = ["src", "tests"]
-exclude = ["migrations"]
+files = ["src"]
 # Pydantic plugin causes some issues: https://github.com/pydantic/pydantic-settings/issues/403
 #plugins = "pydantic.mypy,strawberry.ext.mypy_plugin"
-plugins = "strawberry.ext.mypy_plugin"
 python_version = "3.10"
+explicit_package_bases = false
+no_namespace_packages = true
 
 [[tool.mypy.overrides]]
 module = [
-    "opentelemetry_instrumentor_dramatiq.*"
-]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = [
-    "socketio.*"
+    "opentelemetry.*"
 ]
 ignore_missing_imports = true
 

@@ -1,25 +1,35 @@
-from unittest.mock import patch
+import pytest
+from starlette.middleware.cors import CORSMiddleware
 
-from common.config import AppConfig
 from http_app import create_app
+from src.common.config import AppConfig
 
 
 def test_with_default_config() -> None:
-    """Test create_app without passing test config."""
-    with patch("common.bootstrap.init_storage", return_value=None):
-        app = create_app()
+    app = create_app()
     assert app.debug is False
 
 
 def test_with_debug_config() -> None:
-    # We don't need the storage to test the HTTP app
-    with patch("common.bootstrap.init_storage", return_value=None):
-        app = create_app(
-            test_config=AppConfig(
-                SQLALCHEMY_CONFIG={},
-                ENVIRONMENT="test",
-                DEBUG=True,
-            )
+    app = create_app(
+        test_config=AppConfig(
+            ENVIRONMENT="test",
+            DEBUG=True,
         )
+    )
 
     assert app.debug is True
+
+
+@pytest.mark.parametrize(["origins", "middleware_present"], (
+    pytest.param(["*"], True),
+    pytest.param([], False),
+))
+def test_cors_middleware_added_if_origins_provided(origins: list, middleware_present: bool) -> None:
+    app = create_app(
+        test_config=AppConfig(
+            CORS_ORIGINS=origins,
+        )
+    )
+
+    assert bool([x for x in app.user_middleware if x.cls is CORSMiddleware]) == middleware_present

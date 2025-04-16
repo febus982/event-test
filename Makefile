@@ -4,16 +4,7 @@ containers:
 	docker compose build --build-arg UID=`id -u`
 
 dev-http:
-	docker compose up dev-http
-
-dev-socketio:
-	docker compose up dev-socketio
-
-migrate:
-	docker compose run --rm migrate
-
-autogenerate-migration:
-	docker compose run --rm autogenerate-migration
+	uv run -m http_app
 
 test:
 	uv run pytest -n auto --cov
@@ -31,11 +22,11 @@ install-dependencies:
 	uv sync --all-groups --no-dev --no-install-project --frozen
 
 dev-dependencies:
-	uv sync --all-groups --frozen
+	uv sync --all-groups --no-install-project --frozen
 
 update-dependencies:
 	uv lock --upgrade
-	uv sync --all-groups --frozen
+	uv sync --all-groups --no-install-project --frozen
 
 format:
 	uv run ruff format --check .

@@ -1,19 +1,17 @@
 import asyncio
 from functools import wraps
 
-from opentelemetry import metrics, trace
-from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter
-from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter
-from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter
-from opentelemetry.instrumentation.httpx import HTTPXClientInstrumentor
-from opentelemetry.instrumentation.sqlalchemy import SQLAlchemyInstrumentor
-from opentelemetry.sdk._configuration import _init_logging as init_otel_logging
-from opentelemetry.sdk.metrics import MeterProvider
-from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader
-from opentelemetry.sdk.resources import Resource
-from opentelemetry.sdk.trace import TracerProvider
-from opentelemetry.sdk.trace.export import BatchSpanProcessor
-from opentelemetry_instrumentor_dramatiq import DramatiqInstrumentor
+# OTEL is not yet good on mypy, to be revisited
+from opentelemetry import metrics, trace  # type: ignore
+from opentelemetry.exporter.otlp.proto.grpc._log_exporter import OTLPLogExporter  # type: ignore
+from opentelemetry.exporter.otlp.proto.grpc.metric_exporter import OTLPMetricExporter  # type: ignore
+from opentelemetry.exporter.otlp.proto.grpc.trace_exporter import OTLPSpanExporter  # type: ignore
+from opentelemetry.sdk._configuration import _init_logging as init_otel_logging  # type: ignore
+from opentelemetry.sdk.metrics import MeterProvider  # type: ignore
+from opentelemetry.sdk.metrics.export import PeriodicExportingMetricReader  # type: ignore
+from opentelemetry.sdk.resources import Resource  # type: ignore
+from opentelemetry.sdk.trace import TracerProvider  # type: ignore
+from opentelemetry.sdk.trace.export import BatchSpanProcessor  # type: ignore
 
 from .config import AppConfig
 
@@ -157,6 +155,4 @@ def instrument_third_party():
         may propagate from the individual instrumentor methods if the
         instrumentation process fails.
     """
-    DramatiqInstrumentor().instrument()
-    HTTPXClientInstrumentor().instrument()
-    SQLAlchemyInstrumentor().instrument()
+    pass

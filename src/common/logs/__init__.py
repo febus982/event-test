@@ -2,7 +2,7 @@ import logging
 from typing import List
 
 import structlog
-from opentelemetry.sdk._logs import LoggingHandler
+from opentelemetry.sdk._logs import LoggingHandler  # type: ignore
 from structlog.typing import Processor
 
 from ..config import AppConfig

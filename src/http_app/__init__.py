@@ -2,13 +2,11 @@ import logging
 
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
-from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor
+from opentelemetry.instrumentation.fastapi import FastAPIInstrumentor  # type: ignore
 from starlette.responses import JSONResponse
 
 from common import AppConfig, application_init
-from common.di_container import Container
 from common.telemetry import instrument_third_party
-from http_app import context
 from http_app.routes import init_routes
 
 # These instrumentors patch and wrap libraries, we want
@@ -18,21 +16,10 @@ instrument_third_party()
 
 def create_app(
     test_config: AppConfig | None = None,
-    test_di_container: Container | None = None,
 ) -> FastAPI:
     app_config = test_config or AppConfig()
 
-    """
-    The config is submitted here at runtime, this means
-    that we cannot declare a function to be used with
-    FastAPI dependency injection system because Depends
-    is evaluated before this function is called.
-    A context variable will achieve the same purpose.
-    """
-    context.app_config.set(app_config)
-
-    ref = application_init(app_config, test_di_container)
-    ref.di_container.wire(packages=["http_app"])
+    application_init(app_config)
 
     app = FastAPI(
         debug=app_config.DEBUG,
