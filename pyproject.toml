@@ -1,0 +1,176 @@
+[project]
+authors = [
+    {name = "Federico Busetti", email = "729029+febus982@users.noreply.github.com"},
+]
+requires-python = "<3.14,>=3.10"
+name = "bootstrap-fastapi-service"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+dependencies = [
+    "aiosqlite>=0.18.0",
+    "asgiref<4.0.0,>=3.7.2",
+    "asyncmy>=0.2.10",
+    "cloudevents-pydantic<1.0.0,>=0.0.3",
+    "dependency-injector[pydantic]<5.0.0,>=4.41.0",
+    "dramatiq[redis,watch]<2.0.0,>=1.17.1",
+    "hiredis<4.0.0,>=3.1.0", # Recommended by dramatiq
+    "httpx>=0.23.0",
+    "opentelemetry-instrumentation-httpx",
+    "opentelemetry-instrumentation-sqlalchemy",
+    "opentelemetry-instrumentor-dramatiq",
+    "opentelemetry-exporter-otlp",
+    "opentelemetry-sdk",
+    "orjson<4.0.0,>=3.10.12",
+    "pydantic<3.0.0,>=2.2.1",
+    "pydantic-asyncapi>=0.2.1",
+    "pydantic-settings<3.0.0,>=2.0.3",
+    "SQLAlchemy[asyncio,mypy]<3.0.0,>=2.0.0",
+    "sqlalchemy-bind-manager",
+    "structlog<25.1.1,>=25.1.0",
+]
+
+[dependency-groups]
+http = [
+    "cryptography>=44.0.0",
+    "fastapi>=0.99.0",
+    "jinja2<4.0.0,>=3.1.2",
+    # FastAPI instrumentation is based on the generic ASGI instrumentation,
+    # but automatically creates span when routes are invoked.
+    # If we decide to change framework, the generic ASGI instrumentation
+    # will still name metrics with a generic naming.
+    "opentelemetry-instrumentation-fastapi",
+    "starlette>=0.45.3,<0.46",
+    "pyjwt>=2.10.1",
+    "strawberry-graphql[debug-server]>=0.204.0",
+    "uvicorn[standard]<1.0.0,>=0.34.0",
+]
+socketio = [
+    "python-socketio>=5.12.1",
+    "starlette>=0.45.3,<0.46",
+    "uvicorn[standard]<1.0.0,>=0.34.0",
+]
+migrations = [
+    "alembic<2.0.0,>=1.11.1",
+    "factory-boy<4.0.0,>=3.3.3",
+]
+dev = [
+    "asynctest",
+    "coverage",
+    "mkdocs",
+    "mkdocs-awesome-pages-plugin",
+    "mkdocs-macros-adr-summary",
+    "mkdocs-material",
+    "mkdocs-mermaid2-plugin",
+    "mypy",
+    "mypy-protobuf",
+    "pytest",
+    "pytest-cov",
+    "pytest-factoryboy",
+    "pytest-xdist",
+    "ruff",
+    "strawberry-graphql[debug-server,fastapi]",
+    "pymdown-extensions",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.pdm.build]
+includes = ["src/**/*.py"]
+
+############################
+### Tools configuration  ###
+############################
+[tool.coverage.run]
+branch = true
+source = ["src"]
+omit = [
+    "src/migrations/*",
+    "src/common/config.py",
+    "src/common/logs/*",
+    "src/dramatiq_worker/__init__.py",
+    "src/**/__main__.py",
+    "src/**/dev_server.py",
+]
+# It's not necessary to configure concurrency here
+# because pytest-cov takes care of that
+
+[tool.coverage.report]
+fail_under = 100
+exclude_also = [
+    "pragma: no cover",
+    "pass",
+    "\\.\\.\\.",
+    ]
+
+[tool.mypy]
+files = ["src", "tests"]
+exclude = ["migrations"]
+# Pydantic plugin causes some issues: https://github.com/pydantic/pydantic-settings/issues/403
+#plugins = "pydantic.mypy,strawberry.ext.mypy_plugin"
+plugins = "strawberry.ext.mypy_plugin"
+python_version = "3.10"
+
+[[tool.mypy.overrides]]
+module = [
+    "opentelemetry_instrumentor_dramatiq.*"
+]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = [
+    "socketio.*"
+]
+ignore_missing_imports = true
+
+[tool.pytest.ini_options]
+minversion = "6.0"
+addopts = "-n auto --cov-report=term-missing"
+testpaths = [
+    "tests",
+]
+
+[tool.ruff]
+target-version = "py39"
+line-length = 120
+extend-exclude = [
+    "docs",
+]
+
+[tool.ruff.lint]
+select = [
+    "E",  # pycodestyle
+    "W",  # pycodestyle
+    "F",  # pyflakes
+    "I",  # isort
+    "N",  # pep8-naming
+    "S",  # flake8-bandit
+    "RUF",  # ruff-specific-rules
+]
+# Ignoring rules problematic with formatter
+# https://docs.astral.sh/ruff/formatter/#conflicting-lint-rules
+ignore = [
+    "W191",
+    "E111",
+    "E114",
+    "E117",
+    "D206",
+    "D300",
+    "Q000",
+    "Q001",
+    "Q002",
+    "Q003",
+    "COM812",
+    "COM819",
+    "ISC001",
+    "ISC002",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"__init__.py" = ["F401"]  # Ignore unused imports on init files
+"__main__.py" = ["S104"]  # Ignore 0.0.0.0 bindings for startup script
+"dev_server.py" = ["S104"]  # Ignore 0.0.0.0 bindings for startup script
+"tests/**/*.py" = ["S101"]  # Allow assert usage on tests
+"src/migrations/env.py" = ["E501"]  # Allow long lines
