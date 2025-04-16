@@ -20,18 +20,21 @@ This application can be ran using `make` and either `uv` or `Docker`:
 - You can install `uv` on Mac using `brew`: `brew install uv` (refer to official installation)
 - Download and install Docker: https://www.docker.com/products/docker-desktop/
 
-Using Docker:
-
-* `make containers`: Build containers
-* `docker compose up dev-http`: Run HTTP application with hot reload
-* `docker compose run --rm test`: Run test suite
-
 Using Make and UV (you still need Docker for most of them):
 
 * `make dev-dependencies`: Install dev requirements
 * `make dev-http`: Run HTTP application with hot reload
 * `make test`: Run unit test suite
 * `make check`: Run all checks (tests, code style and lint)
+
+Using Docker:
+
+* `make containers`: Build containers
+* `docker compose up dev-http`: Run HTTP application with hot reload
+* `docker compose run --rm test`: Run test suite
+
+Note: using Docker will also spin up the observability stack containers, remember to `docker compose down`
+when finished to tear down everything.
 
 ## Other commands for development
 
