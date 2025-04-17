@@ -55,7 +55,7 @@ async def test_get_last_n_operations_by_time(balance_repository, sample_operatio
         await balance_repository.save_operation(operation)
 
     # Get operations after timestamp 1100
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1100)
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1100)
 
     assert len(result) == 2
     assert result[0].t == 1100
@@ -68,7 +68,7 @@ async def test_get_last_n_operations_by_time_empty_result(balance_repository, sa
         await balance_repository.save_operation(operation)
 
     # Get operations after timestamp 1300 (none exist)
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1300)
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1300)
 
     assert len(result) == 0
 
@@ -79,7 +79,7 @@ async def test_get_last_n_operations_by_time_nonexistent_user(balance_repository
         await balance_repository.save_operation(operation)
 
     # Get operations for user_id=3 (doesn't exist)
-    result = await balance_repository.get_last_n_operations_by_time(user_id=3, min_t=1000)
+    result = await balance_repository.get_last_operations_by_time(user_id=3, min_t=1000)
 
     assert len(result) == 0
 
@@ -90,7 +90,7 @@ async def test_get_last_n_operations_by_time_filtered_by_deposit(balance_reposit
         await balance_repository.save_operation(operation)
 
     # Get deposit operations after timestamp 1000
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1000, op_type="deposit")
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1000, op_type="deposit")
 
     assert len(result) == 2
     assert all(op.type == "deposit" for op in result)
@@ -104,7 +104,7 @@ async def test_get_last_n_operations_by_time_filtered_by_withdraw(balance_reposi
         await balance_repository.save_operation(operation)
 
     # Get withdraw operations after timestamp 1000
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1000, op_type="withdraw")
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1000, op_type="withdraw")
 
     assert len(result) == 1
     assert result[0].type == "withdraw"
@@ -117,7 +117,7 @@ async def test_get_last_n_operations_by_time_filtered_by_type_no_results(balance
         await balance_repository.save_operation(operation)
 
     # Get withdraw operations after timestamp 1200 (none exist)
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1200, op_type="withdraw")
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1200, op_type="withdraw")
 
     assert len(result) == 0
 
@@ -128,7 +128,7 @@ async def test_get_last_n_operations_by_time_filtered_by_type_different_user(bal
         await balance_repository.save_operation(operation)
 
     # Get deposit operations after timestamp 1000 for user_id=2
-    result = await balance_repository.get_last_n_operations_by_time(user_id=2, min_t=1000, op_type="deposit")
+    result = await balance_repository.get_last_operations_by_time(user_id=2, min_t=1000, op_type="deposit")
 
     assert len(result) == 1
     assert result[0].type == "deposit"
@@ -142,7 +142,7 @@ async def test_get_last_n_operations_by_time_boundary_condition(balance_reposito
         await balance_repository.save_operation(operation)
 
     # Get operations with timestamp exactly 1100
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1100, op_type="withdraw")
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1100, op_type="withdraw")
 
     assert len(result) == 1
     assert result[0].t == 1100
@@ -164,7 +164,7 @@ async def test_get_last_n_operations_by_time_combined_filters(balance_repository
         await balance_repository.save_operation(operation)
 
     # Get deposit operations after timestamp 1100
-    result = await balance_repository.get_last_n_operations_by_time(user_id=1, min_t=1100, op_type="deposit")
+    result = await balance_repository.get_last_operations_by_time(user_id=1, min_t=1100, op_type="deposit")
 
     assert len(result) == 2
     assert all(op.type == "deposit" for op in result)
