@@ -31,7 +31,8 @@ def client(mock_balance_service, testapp):
 
 
 # Test cases
-@pytest.mark.asyncio
+
+
 async def test_deposit_event_success(client, mock_balance_service):
     # Arrange
     mock_balance_service.deposit.return_value = [30, 123]
@@ -46,7 +47,6 @@ async def test_deposit_event_success(client, mock_balance_service):
     assert response.json() == {"alert": True, "alert_codes": [30, 123], "user_id": 1}
 
 
-@pytest.mark.asyncio
 async def test_withdraw_event_success(client, mock_balance_service):
     # Arrange
     mock_balance_service.withdraw.return_value = []
