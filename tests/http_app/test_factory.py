@@ -21,10 +21,13 @@ def test_with_debug_config() -> None:
     assert app.debug is True
 
 
-@pytest.mark.parametrize(["origins", "middleware_present"], (
-    pytest.param(["*"], True),
-    pytest.param([], False),
-))
+@pytest.mark.parametrize(
+    ["origins", "middleware_present"],
+    (
+        pytest.param(["*"], True),
+        pytest.param([], False),
+    ),
+)
 def test_cors_middleware_added_if_origins_provided(origins: list, middleware_present: bool) -> None:
     app = create_app(
         test_config=AppConfig(
