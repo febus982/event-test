@@ -8,7 +8,6 @@ version = "0.1.0"
 description = ""
 readme = "README.md"
 dependencies = [
-    "dependency-injector[pydantic]<5.0.0,>=4.41.0",
     "httpx>=0.23.0",
     "opentelemetry-exporter-otlp",
     "opentelemetry-sdk",
@@ -27,9 +26,7 @@ http = [
     # If we decide to change framework, the generic ASGI instrumentation
     # will still name metrics with a generic naming.
     "opentelemetry-instrumentation-fastapi",
-    "starlette>=0.45.3,<0.46",
     "pyjwt>=2.10.1",
-    "strawberry-graphql[debug-server]>=0.204.0",
     "uvicorn[standard]<1.0.0,>=0.34.0",
 ]
 dev = [
@@ -47,7 +44,6 @@ dev = [
     "pytest-factoryboy",
     "pytest-xdist",
     "ruff",
-    "strawberry-graphql[debug-server,fastapi]",
     "pymdown-extensions",
 ]
 
@@ -87,7 +83,6 @@ exclude_also = [
 files = ["src"]
 # Pydantic plugin causes some issues: https://github.com/pydantic/pydantic-settings/issues/403
 #plugins = "pydantic.mypy,strawberry.ext.mypy_plugin"
-python_version = "3.10"
 explicit_package_bases = false
 no_namespace_packages = true
 

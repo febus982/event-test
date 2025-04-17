@@ -4,7 +4,7 @@ containers:
 	docker compose build --build-arg UID=`id -u`
 
 dev-http:
-	uv run -m http_app
+	uv run ./src/http_app/dev_server.py
 
 test:
 	uv run pytest -n auto --cov
