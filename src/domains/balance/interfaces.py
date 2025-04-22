@@ -1,54 +1,45 @@
 from decimal import Decimal
 from typing import Literal, Protocol
 
-from .models import BalanceOperation
+from .models import BalanceOperationEvent
 
 
-class BalanceServiceInterface(Protocol):
-    async def deposit(self, user_id: int, amount: Decimal, t: int) -> list[int]:
+class BalanceEventServiceInterface(Protocol):
+    async def ingest_event(
+        self, type_: Literal["deposit", "withdraw"], user_id: int, amount: Decimal, t: int
+    ) -> list[int]:
         """
-        Deposits the specified amount into the user's account.
+        Ingests a financial event of a specific type for a user.
+
+        TThis coroutine processes a financial event such as a deposit or withdrawal. It records
+        the event, updates user-specific data accordingly, and returns a list of or identifiers
+        that correspond to alerts to be handled by the event submitter.
 
         Args:
-            user_id (int): The unique identifier of the user's account.
-            amount (Decimal): The amount to deposit.
-            t (int): Time in seconds for the operation.
+            type_: A string literal specifying the type of event. Must be one of "deposit" or
+                  "withdraw".
+            user_id: An integer representing the ID of the user associated with the
+                     financial event.
+            amount: A Decimal value representing the amount of the transaction.
+            t: An integer representing the timestamp associated with the financial event.
 
         Returns:
-            list[int]: List of alert codes. Returns an empty list if no alerts are generated.
-
-        Raises:
-            OperationError: If the deposit operation cannot be completed successfully.
+            A list of integers representing the IDs of the alerts produced by
+            the processed event.
         """
-        ...
 
-    async def withdraw(self, user_id: int, amount: Decimal, t: int) -> list[int]:
-        """
-        Withdraws the specified amount from the user's account.
-
-        Args:
-            user_id (int): The unique identifier of the user's account.
-            amount (Decimal): The amount to withdraw.
-            t (int): Time in seconds for the operation.
-
-        Returns:
-            list[int]: List of alert codes. Returns an empty list if no alerts are generated.
-
-        Raises:
-            OperationError: If the withdrawal operation cannot be completed successfully.
-        """
         ...
 
 
-class BalanceRepositoryInterface(Protocol):
-    async def save_operation(self, operation: BalanceOperation) -> None:
+class BalanceEventRepositoryInterface(Protocol):
+    async def save_operation(self, operation: BalanceOperationEvent) -> None:
         """
         Save a balance operation for a user in the storage. This method stores the operation
         in memory and ensures it gets appended to the list of operations for the given user.
         Operations are sorted by their timestamp (`t`) value to maintain order.
 
         Parameters:
-            operation (BalanceOperation): The balance operation object to be stored. It
+            operation (BalanceOperationEvent): The balance operation object to be stored. It
             contains user-related and operation-specific data.
 
         Returns:
@@ -58,7 +49,7 @@ class BalanceRepositoryInterface(Protocol):
 
     async def get_last_operations_by_time(
         self, user_id: int, min_t: int, op_type: None | Literal["deposit", "withdraw"] = None
-    ) -> list[BalanceOperation]:
+    ) -> list[BalanceOperationEvent]:
         """
         Retrieve the last operations of a specific type performed by a user after a given time.
 
@@ -83,7 +74,7 @@ class BalanceRepositoryInterface(Protocol):
 
     async def get_last_n_operations(
         self, user_id: int, num_operations: int, op_type: None | Literal["deposit", "withdraw"] = None
-    ) -> list[BalanceOperation]:
+    ) -> list[BalanceOperationEvent]:
         """
         Retrieve the last 'n' balance operations for a specific user, optionally filtered by operation type.
 
@@ -99,6 +90,6 @@ class BalanceRepositoryInterface(Protocol):
                 to None, which implies no filtering.
 
         Returns:
-            list[BalanceOperation]: A list of the most recent balance operations matching the criteria.
+            list[BalanceOperationEvent]: A list of the most recent balance operations matching the criteria.
         """
         ...

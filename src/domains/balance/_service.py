@@ -1,61 +1,46 @@
 from asyncio import TaskGroup
 from decimal import Decimal
+from typing import Literal
 
 from .exceptions import OperationError
-from .interfaces import BalanceRepositoryInterface
-from .models import BalanceOperation
+from .interfaces import BalanceEventRepositoryInterface
+from .models import BalanceOperationEvent
 
 
-class BalanceService:
-    def __init__(self, balance_repository: BalanceRepositoryInterface) -> None:
+class BalanceEventService:
+    def __init__(self, balance_repository: BalanceEventRepositoryInterface) -> None:
         self._balance_repository = balance_repository
 
-    async def deposit(self, user_id: int, amount: Decimal, t: int) -> list[int]:
+    async def ingest_event(
+        self, type_: Literal["deposit", "withdraw"], user_id: int, amount: Decimal, t: int
+    ) -> list[int]:
         """
-        Deposits the specified amount into the user's account.
+        Ingests a financial event of a specific type for a user.
+
+        This coroutine processes a financial event such as a deposit or withdrawal. It records
+        the event, updates user-specific data accordingly, and returns a list of or identifiers
+        that correspond to alerts to be handled by the event submitter.
 
         Args:
-            user_id (int): The unique identifier of the user's account.
-            amount (Decimal): The amount to deposit.
-            t (int): Time in seconds for the operation.
+            type_: A string literal specifying the type of event. Must be one of "deposit" or
+                  "withdraw".
+            user_id: An integer representing the ID of the user associated with the
+                     financial event.
+            amount: A Decimal value representing the amount of the transaction.
+            t: An integer representing the timestamp associated with the financial event.
 
         Returns:
-            list[int]: List of alert codes. Returns an empty list if no alerts are generated.
-
-        Raises:
-            OperationError: If the deposit operation cannot be completed successfully.
+            A list of integers representing the IDs of the alerts produced by
+            the processed event.
         """
         try:
-            op = BalanceOperation(user_id=user_id, amount=amount, t=t, type="deposit")
+            op = BalanceOperationEvent(user_id=user_id, amount=amount, t=t, type=type_)
             await self._balance_repository.save_operation(op)
             return await self._check_for_alerts(op)
         except Exception as e:
-            raise OperationError("The deposit operation failed") from e
+            raise OperationError("Failed event ingestion") from e
 
-    async def withdraw(self, user_id: int, amount: Decimal, t: int) -> list[int]:
-        """
-        Withdraws the specified amount from the user's account.
-
-        Args:
-            user_id (int): The unique identifier of the user's account.
-            amount (Decimal): The amount to withdraw.
-            t (int): Time in seconds for the operation.
-
-        Returns:
-            list[int]: List of alert codes. Returns an empty list if no alerts are generated.
-
-        Raises:
-            OperationError: If the withdrawal operation cannot be completed successfully.
-        """
-
-        try:
-            op = BalanceOperation(user_id=user_id, amount=amount, t=t, type="withdraw")
-            await self._balance_repository.save_operation(op)
-            return await self._check_for_alerts(op)
-        except Exception as e:
-            raise OperationError("The withdraw operation failed") from e
-
-    async def _check_for_alerts(self, last_operation: BalanceOperation) -> list[int]:
+    async def _check_for_alerts(self, last_operation: BalanceOperationEvent) -> list[int]:
         """
         Checks for balance alerts for a specific user.
 
@@ -65,17 +50,19 @@ class BalanceService:
         conditions to determine which alerts are triggered.
 
         Args:
-            user_id (int): The unique identifier for the user.
+            last_operation (BalanceOperationEvent): The last operation performed by the user.
 
         Returns:
             list[int]: A list of alert identifiers that are triggered based on the
-            user's balance.
+            user's last operations.
         """
 
         # This is an improvement area. We should probably have a centralised error/alert
         # handling mechanism, supporting more than error codes (i.e. description, log behaviour, etc.).
         # Without more information on the wider use cases of the application this seem
         # to be a good place to start. We at least ensure the uniqueness of the error codes using a dictionary.
+        # Another improvement would be making all the hardcoded values configurable
+        # (number of checked operations, thresholds, etc.)
 
         async with TaskGroup() as tg:
             tasks = {
