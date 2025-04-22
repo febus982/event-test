@@ -2,51 +2,51 @@ from decimal import Decimal
 
 import pytest
 
-from domains.balance.models import BalanceOperation
-from src.gateways.balance_repository import BalanceRepository, _balance_storage
+from domains.balance.models import BalanceOperationEvent
+from src.gateways.balance_event_repository import BalanceEventRepository, _balance_events_storage
 
 
 @pytest.fixture
 def balance_repository():
     """Return a fresh instance of BalanceRepository for testing."""
     # Clear the storage before each test
-    _balance_storage.clear()
-    return BalanceRepository()
+    _balance_events_storage.clear()
+    return BalanceEventRepository()
 
 
 @pytest.fixture
 def sample_operations():
     """Return a list of sample operations for testing."""
     return [
-        BalanceOperation(type="deposit", amount=Decimal("100.00"), user_id=1, t=1000),
-        BalanceOperation(type="withdraw", amount=Decimal("50.00"), user_id=1, t=1100),
-        BalanceOperation(type="deposit", amount=Decimal("25.00"), user_id=1, t=1200),
-        BalanceOperation(type="deposit", amount=Decimal("200.00"), user_id=2, t=1050),
+        BalanceOperationEvent(type="deposit", amount=Decimal("100.00"), user_id=1, t=1000),
+        BalanceOperationEvent(type="withdraw", amount=Decimal("50.00"), user_id=1, t=1100),
+        BalanceOperationEvent(type="deposit", amount=Decimal("25.00"), user_id=1, t=1200),
+        BalanceOperationEvent(type="deposit", amount=Decimal("200.00"), user_id=2, t=1050),
     ]
 
 
 async def test_save_operation(balance_repository):
     """Test that operations are saved correctly."""
-    operation = BalanceOperation(type="deposit", amount=Decimal("100.00"), user_id=1, t=1000)
+    operation = BalanceOperationEvent(type="deposit", amount=Decimal("100.00"), user_id=1, t=1000)
 
     await balance_repository.save_operation(operation)
 
-    assert len(_balance_storage) == 1
-    assert _balance_storage[1][0] == operation
+    assert len(_balance_events_storage) == 1
+    assert _balance_events_storage[1][0] == operation
 
 
 async def test_save_multiple_operations_sorts_by_time(balance_repository):
     """Test that operations are sorted by time after saving."""
-    operation1 = BalanceOperation(type="deposit", amount=Decimal("100.00"), user_id=1, t=1200)
+    operation1 = BalanceOperationEvent(type="deposit", amount=Decimal("100.00"), user_id=1, t=1200)
 
-    operation2 = BalanceOperation(type="withdraw", amount=Decimal("50.00"), user_id=1, t=1100)
+    operation2 = BalanceOperationEvent(type="withdraw", amount=Decimal("50.00"), user_id=1, t=1100)
 
     await balance_repository.save_operation(operation1)
     await balance_repository.save_operation(operation2)
 
-    assert len(_balance_storage[1]) == 2
-    assert _balance_storage[1][0] == operation2  # operation2 has earlier timestamp
-    assert _balance_storage[1][1] == operation1
+    assert len(_balance_events_storage[1]) == 2
+    assert _balance_events_storage[1][0] == operation2  # operation2 has earlier timestamp
+    assert _balance_events_storage[1][1] == operation1
 
 
 async def test_get_last_n_operations_by_time(balance_repository, sample_operations):
@@ -153,11 +153,11 @@ async def test_get_last_n_operations_by_time_combined_filters(balance_repository
     """Test retrieving operations with both time and type filters on multiple operations."""
     # Create operations with varied timestamps
     operations = [
-        BalanceOperation(type="deposit", amount=Decimal("10.00"), user_id=1, t=1000),
-        BalanceOperation(type="deposit", amount=Decimal("20.00"), user_id=1, t=1100),
-        BalanceOperation(type="withdraw", amount=Decimal("5.00"), user_id=1, t=1200),
-        BalanceOperation(type="deposit", amount=Decimal("30.00"), user_id=1, t=1300),
-        BalanceOperation(type="withdraw", amount=Decimal("15.00"), user_id=1, t=1400),
+        BalanceOperationEvent(type="deposit", amount=Decimal("10.00"), user_id=1, t=1000),
+        BalanceOperationEvent(type="deposit", amount=Decimal("20.00"), user_id=1, t=1100),
+        BalanceOperationEvent(type="withdraw", amount=Decimal("5.00"), user_id=1, t=1200),
+        BalanceOperationEvent(type="deposit", amount=Decimal("30.00"), user_id=1, t=1300),
+        BalanceOperationEvent(type="withdraw", amount=Decimal("15.00"), user_id=1, t=1400),
     ]
 
     for operation in operations:

@@ -1,10 +1,11 @@
 # This is an example storage implementation, not thread safe and not efficient.
-# We should use a proper database here
+# We should use a proper storage implementation, either permanent or temporary,
+# based on the lifecycle we want for events and their use cases.
 from typing import Literal
 
-from domains.balance.models import BalanceOperation
+from domains.balance.models import BalanceOperationEvent
 
-_balance_storage: dict[int, list[BalanceOperation]] = {}
+_balance_events_storage: dict[int, list[BalanceOperationEvent]] = {}
 """
 Structure of the storage:
 {
@@ -18,29 +19,29 @@ Structure of the storage:
 """
 
 
-class BalanceRepository:
-    async def save_operation(self, operation: BalanceOperation) -> None:
+class BalanceEventRepository:
+    async def save_operation(self, operation: BalanceOperationEvent) -> None:
         """
         Save a balance operation for a user in the storage. This method stores the operation
         in memory and ensures it gets appended to the list of operations for the given user.
         Operations are sorted by their timestamp (`t`) value to maintain order.
 
         Parameters:
-            operation (BalanceOperation): The balance operation object to be stored. It
+            operation (BalanceOperationEvent): The balance operation object to be stored. It
             contains user-related and operation-specific data.
 
         Returns:
             None
         """
-        if not _balance_storage.get(operation.user_id):
-            _balance_storage[operation.user_id] = []
+        if not _balance_events_storage.get(operation.user_id):
+            _balance_events_storage[operation.user_id] = []
 
-        _balance_storage[operation.user_id].append(operation)
-        _balance_storage[operation.user_id].sort(key=lambda x: x.t)
+        _balance_events_storage[operation.user_id].append(operation)
+        _balance_events_storage[operation.user_id].sort(key=lambda x: x.t)
 
     async def get_last_operations_by_time(
         self, user_id: int, min_t: int, op_type: None | Literal["deposit", "withdraw"] = None
-    ) -> list[BalanceOperation]:
+    ) -> list[BalanceOperationEvent]:
         """
         Retrieve the last operations of a specific type performed by a user after a given time.
 
@@ -62,14 +63,14 @@ class BalanceRepository:
                 A list of BalanceOperation objects filtered by the specified criteria.
         """
         if op_type:
-            operations = [x for x in _balance_storage.get(user_id, []) if (x.type == op_type and x.t >= min_t)]
+            operations = [x for x in _balance_events_storage.get(user_id, []) if (x.type == op_type and x.t >= min_t)]
         else:
-            operations = [x for x in _balance_storage.get(user_id, []) if x.t >= min_t]
+            operations = [x for x in _balance_events_storage.get(user_id, []) if x.t >= min_t]
         return operations
 
     async def get_last_n_operations(
         self, user_id: int, num_operations: int, op_type: None | Literal["deposit", "withdraw"] = None
-    ) -> list[BalanceOperation]:
+    ) -> list[BalanceOperationEvent]:
         """
         Retrieve the last 'n' balance operations for a specific user, optionally filtered by operation type.
 
@@ -85,11 +86,11 @@ class BalanceRepository:
                 to None, which implies no filtering.
 
         Returns:
-            list[BalanceOperation]: A list of the most recent balance operations matching the criteria.
+            list[BalanceOperationEvent]: A list of the most recent balance operations matching the criteria.
         """
         if op_type:
-            operations = [x for x in _balance_storage.get(user_id, []) if x.type == op_type]
+            operations = [x for x in _balance_events_storage.get(user_id, []) if x.type == op_type]
         else:
-            operations = [*_balance_storage.get(user_id, [])]
+            operations = [*_balance_events_storage.get(user_id, [])]
 
         return operations[-num_operations:]

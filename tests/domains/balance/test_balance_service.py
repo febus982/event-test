@@ -3,9 +3,9 @@ from unittest.mock import AsyncMock, patch
 
 import pytest
 
-from src.domains.balance._service import BalanceService
+from src.domains.balance._service import BalanceEventService
 from src.domains.balance.exceptions import OperationError
-from src.domains.balance.models import BalanceOperation
+from src.domains.balance.models import BalanceOperationEvent
 
 
 @pytest.fixture
@@ -21,7 +21,7 @@ def mock_balance_repository():
 @pytest.fixture
 def balance_service(mock_balance_repository):
     """Returns a BalanceService with a mocked repository."""
-    return BalanceService(mock_balance_repository)
+    return BalanceEventService(mock_balance_repository)
 
 
 async def test_deposit_success(balance_service, mock_balance_repository):
@@ -34,12 +34,12 @@ async def test_deposit_success(balance_service, mock_balance_repository):
     # Mock the _check_for_alerts method to avoid testing its implementation here
     with patch.object(balance_service, "_check_for_alerts", return_value=[]) as mock_check_alerts:
         # Act
-        result = await balance_service.deposit(user_id, amount, t)
+        result = await balance_service.ingest_event("deposit", user_id, amount, t)
 
         # Assert
         mock_balance_repository.save_operation.assert_called_once()
         operation = mock_balance_repository.save_operation.call_args[0][0]
-        assert isinstance(operation, BalanceOperation)
+        assert isinstance(operation, BalanceOperationEvent)
         assert operation.user_id == user_id
         assert operation.amount == amount
         assert operation.t == t
@@ -58,9 +58,9 @@ async def test_deposit_raises_operation_error(balance_service, mock_balance_repo
 
     # Act & Assert
     with pytest.raises(OperationError) as exc_info:
-        await balance_service.deposit(user_id, amount, t)
+        await balance_service.ingest_event("deposit", user_id, amount, t)
 
-    assert "The deposit operation failed" in str(exc_info.value)
+    assert "Failed event ingestion" in str(exc_info.value)
     mock_balance_repository.save_operation.assert_called_once()
 
 
@@ -74,12 +74,12 @@ async def test_withdraw_success(balance_service, mock_balance_repository):
     # Mock the _check_for_alerts method to avoid testing its implementation here
     with patch.object(balance_service, "_check_for_alerts", return_value=[30]) as mock_check_alerts:
         # Act
-        result = await balance_service.withdraw(user_id, amount, t)
+        result = await balance_service.ingest_event("withdraw", user_id, amount, t)
 
         # Assert
         mock_balance_repository.save_operation.assert_called_once()
         operation = mock_balance_repository.save_operation.call_args[0][0]
-        assert isinstance(operation, BalanceOperation)
+        assert isinstance(operation, BalanceOperationEvent)
         assert operation.user_id == user_id
         assert operation.amount == amount
         assert operation.t == t
@@ -98,15 +98,15 @@ async def test_withdraw_raises_operation_error(balance_service, mock_balance_rep
 
     # Act & Assert
     with pytest.raises(OperationError) as exc_info:
-        await balance_service.withdraw(user_id, amount, t)
+        await balance_service.ingest_event("withdraw", user_id, amount, t)
 
-    assert "The withdraw operation failed" in str(exc_info.value)
+    assert "Failed event ingestion" in str(exc_info.value)
     mock_balance_repository.save_operation.assert_called_once()
 
 
 async def test_check_for_alerts(balance_service, mock_balance_repository):
     # Arrange
-    operation = BalanceOperation(user_id=1, amount=Decimal("100.00"), t=1000, type="deposit")
+    operation = BalanceOperationEvent(user_id=1, amount=Decimal("100.00"), t=1000, type="deposit")
 
     # Mock all check methods
     with (
@@ -137,7 +137,7 @@ async def test_high_withdraw_check_true(balance_service, mock_balance_repository
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("150.00"), t=1000, type="withdraw")
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("150.00"), t=1000, type="withdraw")
     ]
 
     # Act
@@ -165,7 +165,7 @@ async def test_high_withdraw_check_false_deposit(balance_service, mock_balance_r
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("150.00"), t=1000, type="deposit")
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("150.00"), t=1000, type="deposit")
     ]
 
     # Act
@@ -180,7 +180,7 @@ async def test_high_withdraw_check_false_low_amount(balance_service, mock_balanc
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw")
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw")
     ]
 
     # Act
@@ -195,9 +195,9 @@ async def test_consecutive_withdraws_check_true(balance_service, mock_balance_re
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1001, type="withdraw"),
-        BalanceOperation(user_id=user_id, amount=Decimal("70.00"), t=1002, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1001, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("70.00"), t=1002, type="withdraw"),
     ]
 
     # Act
@@ -212,9 +212,9 @@ async def test_consecutive_withdraws_check_false_deposit(balance_service, mock_b
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("70.00"), t=1002, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("70.00"), t=1002, type="withdraw"),
     ]
 
     # Act
@@ -229,8 +229,8 @@ async def test_consecutive_withdraws_check_false_not_enough_operations(balance_s
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1001, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="withdraw"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1001, type="withdraw"),
     ]
 
     # Act
@@ -245,9 +245,9 @@ async def test_consecutive_growing_deposits_check_true(balance_service, mock_bal
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("70.00"), t=1002, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("70.00"), t=1002, type="deposit"),
     ]
 
     # Act
@@ -264,9 +264,9 @@ async def test_consecutive_growing_deposits_check_false_not_growing(balance_serv
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("70.00"), t=1001, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1002, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("70.00"), t=1001, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1002, type="deposit"),
     ]
 
     # Act
@@ -283,8 +283,8 @@ async def test_consecutive_growing_deposits_check_false_not_enough_operations(ba
     # Arrange
     user_id = 1
     mock_balance_repository.get_last_n_operations.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=1000, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("60.00"), t=1001, type="deposit"),
     ]
 
     # Act
@@ -302,8 +302,8 @@ async def test_high_deposits_over_short_time_check_true(balance_service, mock_ba
     user_id = 1
     last_t = 1000
     mock_balance_repository.get_last_operations_by_time.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("100.00"), t=980, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("110.00"), t=990, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("100.00"), t=980, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("110.00"), t=990, type="deposit"),
     ]
 
     # Act
@@ -321,8 +321,8 @@ async def test_high_deposits_over_short_time_check_false_below_threshold(balance
     user_id = 1
     last_t = 1000
     mock_balance_repository.get_last_operations_by_time.return_value = [
-        BalanceOperation(user_id=user_id, amount=Decimal("100.00"), t=980, type="deposit"),
-        BalanceOperation(user_id=user_id, amount=Decimal("50.00"), t=990, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("100.00"), t=980, type="deposit"),
+        BalanceOperationEvent(user_id=user_id, amount=Decimal("50.00"), t=990, type="deposit"),
     ]
 
     # Act

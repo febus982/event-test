@@ -1,7 +1,7 @@
 import pytest
 from fastapi.testclient import TestClient
 
-from gateways.balance_repository import _balance_storage
+from gateways.balance_event_repository import _balance_events_storage
 
 
 @pytest.fixture
@@ -125,7 +125,7 @@ def client(testapp):
     ],
 )
 async def test_scenarios(client, payloads: list[dict], expected_alert_codes: list[int]):
-    _balance_storage.clear()
+    _balance_events_storage.clear()
 
     # Act
     for payload in payloads:

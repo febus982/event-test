@@ -1,10 +1,10 @@
 from decimal import Decimal
 from typing import Annotated, Any, Literal
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends
 from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, computed_field
 
-from domains.balance import BalanceServiceInterface, get_balance_service
+from domains.balance import BalanceEventServiceInterface, get_balance_service
 
 router = APIRouter(prefix="/event", tags=["event"])
 
@@ -21,8 +21,7 @@ class EventRequest(BaseModel):
     # when adding new operation types!!!!!!
     type: Literal["deposit", "withdraw"]
     # Theoretically Decimal can handle both string and number input, however the requirements
-    # seem to suggest only string values, therefore I added specific validation on input type.
-    # This can be easily improved, also the decimal amount and precision
+    # seem to suggest only string values should be accepted, therefore I added specific validation on input type.
     amount: Annotated[Decimal, BeforeValidator(is_string), Field(decimal_places=2, gt=0)]
     user_id: Annotated[int, Field(gt=0)]
     t: Annotated[int, Field(gt=0)]
@@ -47,15 +46,9 @@ class EventResponse(BaseModel):
 @router.post("/")
 async def ingest_event(
     event: EventRequest,
-    balance_service: Annotated[BalanceServiceInterface, Depends(get_balance_service)],
+    balance_service: Annotated[BalanceEventServiceInterface, Depends(get_balance_service)],
 ) -> EventResponse:
-    match event.type:
-        case "deposit":
-            alerts = await balance_service.deposit(event.user_id, event.amount, event.t)
-        case "withdraw":
-            alerts = await balance_service.withdraw(event.user_id, event.amount, event.t)
-        case _:
-            raise HTTPException(500, "Unsupported operation type")
+    alerts = await balance_service.ingest_event(event.type, event.user_id, event.amount, event.t)
 
     return EventResponse(
         alert_codes=alerts,
